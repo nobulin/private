@@ -1,16 +1,12 @@
 
-(defconst stdio-fifo-name
-  (expand-file-name "~/elisp/stdio/.stdio-fifo"))
+(defconst stdio-fifo-name (expand-file-name "~/private/.stdio-fifo"))
 
 (call-process-shell-command
- (format "test -p %s || /usr/bin/mkfifo %s"
-	 stdio-fifo-name stdio-fifo-name))
+ (format "test -p %s || /usr/bin/mkfifo %s" stdio-fifo-name stdio-fifo-name))
 
 (setq stdio-input-process
       (start-process-shell-command
-       "*STDIO*"
-       nil
-       (format "/bin/cat < %s" stdio-fifo-name)))
+       "*STDIO*" nil (format "/bin/cat < %s" stdio-fifo-name)))
 
 (setq stdio-input-buffer
       (with-current-buffer (get-buffer-create "*STDIN*")
