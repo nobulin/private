@@ -1,26 +1,21 @@
 ;;; 私の grep コマンド！
 
-(require 'subr-x)
-
-;;; 探索キーワード
-
+;;; キーワード文字列を入力する
 (defun mygrep-keyword ()
   (if command-line-args-left
       (car command-line-args-left)
     (read-string "Keyword(RE): ")))
 
-;;; 探索ファイル
-
+;;; 入力された条件のファイルを集める
 (defun mygrep-files ()
-  (let* ((filematch (if command-line-args-left
-			(cadr command-line-args-left)
-		      (read-string "Files(RE): ")))
-	 (dir (file-name-directory filematch))
-	 (match (file-name-nondirectory filematch)))
+  (let* ((input (if command-line-args-left
+		    (cadr command-line-args-left)
+		  (read-string "Files(RE): ")))
+	 (dir (file-name-directory input))
+	 (match (file-name-nondirectory input)))
     (directory-files dir t match)))
 
-;;; 探索処理
-
+;;; 集めたファイルをキーワード探索し、一致する行を保存する
 (defun mygrep-search (keyword files)
   (let (result)
     (dolist (file files)
@@ -35,23 +30,27 @@
 		result))))
     (reverse result)))
 
-;;; 結果出力
-
+;;; 結果を出力する
 (defun mygrep-output (outputs)
-  (let (result)
+  (with-current-buffer (let ((buffer (get-buffer "*MYGREP*")))
+			 (and buffer (kill-buffer buffer))
+			 (get-buffer-create "*MYGREP*"))
+    (erase-buffer)
+    (setq truncate-lines t)
     (dolist (output outputs)
-      (push (apply 'format "%s:%d:%s" output) result))
-    (reverse result)))
+      (let ((string (apply 'format "%s:%d:%s" output)))
+	(if noninteractive
+	    (message "%s" string)
+	  (insert-before-markers string "\n"))))
+    (compilation-mode)))
 
 ;;; メイン処理
+(defun mygrep ()
+  (interactive)
+  (let* ((keyword (mygrep-keyword))
+	 (files (mygrep-files))
+	 (outputs (mygrep-search keyword files)))
+    (mygrep-output outputs))
+  (pop-to-buffer "*MYGREP*"))
 
-(let ((string (string-join
-	       (mygrep-output
-		(mygrep-search (mygrep-keyword)
-			       (mygrep-files)))
-	       "\n")))
-  (if command-line-args-left
-      (message "%s" string)
-    (with-current-buffer (get-buffer-create "*mygrep*")
-      (erase-buffer)
-      (insert (format "%s\n" string)))))
+(when noninteractive (mygrep))
