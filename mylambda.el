@@ -1,0 +1,26 @@
+(mapcar '1+ '(1 2 3))
+(2 3 4)
+
+(cl-mapcar '+ '(1 2 3) '(4 5 6))
+(5 7 9)
+
+((lambda (func seq)
+   (let (result)
+     (dolist (arg seq)
+       (push (funcall func arg) result))
+     (reverse result)))
+ '1+ '(1 2 3))
+(2 3 4)
+
+((lambda (func &rest seqs)
+   (let (result
+	 (mapcar (lambda (mapfunc seq)
+		   (let (result)
+		     (dolist (arg seq)
+		       (push (funcall mapfunc arg) result))
+		     (reverse result)))))
+     (dotimes (i (apply 'min (funcall mapcar 'length seqs)))
+       (push (funcall mapcar (lambda (arg) (nth i arg)) seqs) result))
+     (funcall mapcar (lambda (args) (apply func args)) (reverse result))))
+ '+ '(1 2 3) '(4 5 6))
+(5 7 9)
